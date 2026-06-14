@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotating Triangle (Three.js)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <script>
+        // 1. Scene(장면) 생성
+        const scene = new THREE.Scene();
+
+        // 2. Camera(카메라) 생성 (직교 카메라를 사용하여 2D 평면처럼 연출)
+        const aspect = window.innerWidth / window.innerHeight;
+        const camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0.1, 10);
+        camera.position.z = 1;
+
+        // 3. Renderer(렌더러) 생성 및 HTML 바디에 주입
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 4. 삼각형 Geometry(기하학 형태) 및 정점 색상 정의
+        const geometry = new THREE.BufferGeometry();
+        
+        // 정점 좌표 (XYZ) - OpenGL/DX12와 동일한 크기와 위치
+        const vertices = new Float32Array([
+             0.0,  0.5, 0.0,  // 상단
+             0.5, -0.5, 0.0,  // 우하단
+            -0.5, -0.5, 0.0   // 좌하단
+        ]);
+        
+        // 정점 색상 (RGB) - 빨강, 초록, 파랑
+        const colors = new Float32Array([
+            1.0, 0.0, 0.0,  // 상단 (빨강)
+            0.0, 1.0, 0.0,  // 우하단 (초록)
+            0.0, 0.0, 1.0   // 좌하단 (파랑)
+        ]);
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // 5. Material(재질) 생성 (정점 색상을 사용하도록 vertexColors 활성화)
+        const material = new THREE.MeshBasicMaterial({ 
+            vertexColors: true, 
+            side: THREE.DoubleSide 
+        });
+
+        // 6. Mesh(망) 생성 및 장면에 추가
+        const triangle = new THREE.Mesh(geometry, material);
+        scene.add(triangle);
+
+        // 7. 애니메이션 루프 (매 프레임 회전 및 렌더링)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Z축을 기준으로 회전 (OpenGL의 glRotatef(r, 0, 0, 1)과 동일)
+            triangle.rotation.z += 0.01;
+
+            renderer.render(scene, camera);
+        }
+
+        // 창 크기가 바뀔 때 대응하는 리사이즈 이벤트
+        window.addEventListener('resize', () => {
+            const currentAspect = window.innerWidth / window.innerHeight;
+            camera.left = -currentAspect;
+            camera.right = currentAspect;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 애니메이션 시작
+        animate();
+    </script>
+</body>
+</html>
