@@ -1,0 +1,69 @@
+#include <windows.h>
+#include <gl/GL.h>
+
+#pragma comment(lib, "opengl32.lib")
+
+float r = 0;
+
+// 1. OpenGL 초기화: 윈도우와 그래픽 카드를 연결
+void InitGL(HWND hwnd, HDC hdc) {
+    PIXELFORMATDESCRIPTOR p = {
+        sizeof(p), 1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA, 32
+    };
+    SetPixelFormat(hdc, ChoosePixelFormat(hdc, &p), &p);
+    wglMakeCurrent(hdc, wglCreateContext(hdc));
+}
+
+// 2. 그리기 루틴: 회전 및 무지개 삼각형 정의
+void Draw() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+    glRotatef(r += 0.5f, 0, 0, 1);
+
+    glBegin(GL_TRIANGLES);
+    glColor3f(1, 0, 0); glVertex2f(0, 0.5f);    // 상단 (빨강)
+    glColor3f(0, 1, 0); glVertex2f(0.5f, -0.5f);  // 우하단 (초록)
+    glColor3f(0, 0, 1); glVertex2f(-0.5f, -0.5f); // 좌하단 (파랑)
+    glEnd();
+}
+
+// 3. 메시지 처리 및 메인 루프
+LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
+    if (m == WM_DESTROY) {
+        PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProc(h, m, w, l);
+}
+
+// 표준 main 함수를 진입점으로 사용 (콘솔창이 함께 뜸)
+int main() {
+    HINSTANCE hI = GetModuleHandle(0);
+
+    // 유니코드 호환을 위해 명시적으로 WNDCLASSW와 CreateWindowW 사용
+    WNDCLASSW wc = { 0, WndProc, 0, 0, hI, 0, 0, 0, 0, L"GL" };
+    RegisterClassW(&wc);
+
+    HWND hwnd = CreateWindowW(L"GL", L"Rotating Triangle (OpenGL)",
+        WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+        100, 100, 500, 500, 0, 0, hI, 0);
+
+    HDC hdc = GetDC(hwnd);
+    InitGL(hwnd, hdc);
+
+    MSG msg;
+    while (1) {
+        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) break;
+            DispatchMessage(&msg);
+        }
+        else {
+            Draw();
+            SwapBuffers(hdc);
+            Sleep(16); // CPU 과점유 방지 (약 60FPS)
+        }
+    }
+    return 0;
+}
